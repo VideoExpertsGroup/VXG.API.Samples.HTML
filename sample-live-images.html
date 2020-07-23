@@ -1,0 +1,296 @@
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>VXG API sample / Extract Images from Live stream</title>
+    <!-- frameworks -->
+    <script src="frw/jquery.min.js"></script>
+    <script src="frw/jquery-ui.min.js"></script>
+    <script src="frw/jquery.formatDateTime.js"></script>
+    <script src="frw/datetimepicker.full.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="frw/bootstrap.min.css">
+    <script src="frw/bootstrap.min.js"></script>
+
+	<style>
+		#tokenContainer {
+			width: 700px;
+		}
+		#showForm {
+			text-decoration: underline;
+		}
+		#showForm:hover {
+			cursor: pointer;
+		}
+		.btn {
+			color: white;
+			background-color: #a0cf4d;
+		}		
+	</style>
+</head>
+
+<body onLoad="Load()">
+<div class="container">
+
+    <h1>Extract Images from Live video</h1>
+    
+	<div class="form-inline" role="form">
+        <h3>Select a camera</h3>
+        <div class="form-group ">
+            <div class="input-group ">
+                <input id="tokenContainer" type="text" class="form-control" placeholder="Enter access token" value="">
+            </div>
+        </div>
+		<h3>Set interval</h3>
+		<div class="form-group ">
+			<div class="input-group">
+				<input id="period" type="number" class="form-control" aria-describedby="basic-addon3"
+					   placeholder="Period" value="1.0">
+				<div class="input-group-append">
+					<span class="input-group-text">in seconds</span>
+				</div>
+			</div>
+		</div>		
+    </div>
+    <div>
+    <div style="padding-top:20px; padding-bottom:20px;">
+        <button id="check" class="btn btn-default">Check image generation</button>
+        <button id="start" class="btn btn-default">Start image generation</button>
+		<button id="stop" class="btn btn-defaultx">Stop image generation</button>
+	</div>
+
+
+	<div class="time-form hidden" >
+		<h3>Select time interval to show (in UTC)</h3>
+		<div class="form-inline" role="form">
+			<div class="form-group ">
+				<div class="input-group ">
+					<input id="from" type="text" class="form-control" aria-describedby="basic-addon1"
+						   placeholder="Start time">
+					<div class="input-group-append">
+						<span class="input-group-text">in UTC</span>
+					</div>						   
+				</div>
+			</div>
+		</div>
+		<div class="form-inline" role="form">
+			<div class="form-group ">
+				<div class="input-group ">
+					<input id="to" type="text" class="form-control" aria-describedby="basic-addon2"
+						   placeholder="End time">
+					<div class="input-group-append">
+						<span class="input-group-text">in UTC</span>
+					</div>						   
+				</div>
+			</div>
+		</div>
+	</div>
+    
+	
+	<p><span id="showForm" style="display: hide;"> Show images for the last minute</span></p>
+	<div>
+		<button id="getImages" class="btn btn-default">Show images</button>
+		<div id="result" style="padding-top:20px;></div>
+        <!-- div class="lds-ellipsis" style="display: none"><div></div><div></div><div></div><div></div></div -->
+    </div>
+	</div>
+</div>
+
+<script>
+////////////////////////////////////////////////////////////
+//
+//  This section shows how to use VXG REST API.
+//
+////////////////////////////////////////////////////////////
+
+    var taskId;
+    var access_token;
+
+	$( "#check" ).click(function() {	
+		access_token = $('#tokenContainer').val();
+		// initializes HTTP header
+		$.ajaxSetup({
+			headers: {
+				'Authorization': 'Acc  ' + access_token
+			}
+		});
+		
+        return $.ajax({
+            method: 'GET',
+            url: 'https://web.skyvr.videoexpertsgroup.com/' + 'api/v4/images/generation/live/',
+            contentType: "application/json",
+            dataType: 'json',
+        }).then(function (data) {
+			$( "#result" ).html("Live image generation interval: " + data.image_generation_period);
+			$('#period').val(data.image_generation_period);
+        });
+	  
+	});
+
+	$( "#start" ).click(function() {	
+		access_token = $('#tokenContainer').val();
+		// initializes HTTP header
+		$.ajaxSetup({
+			headers: {
+				'Authorization': 'Acc  ' + access_token
+			}
+		});
+
+		let period = $('#period').val();
+
+        let requestData = {
+            image_generation_period: period,
+        };
+		
+        return $.ajax({
+            method: 'PUT',
+            url: 'https://web.skyvr.videoexpertsgroup.com/' + 'api/v4/images/generation/live/',
+            data: JSON.stringify(requestData),
+            contentType: "application/json",
+            dataType: 'json',
+        }).then(function (data) {
+			$( "#result" ).html("Live image generation started");
+        });
+	  
+	});
+
+	$( "#stop" ).click(function() {
+		access_token = $('#tokenContainer').val();
+		// initializes HTTP header
+		$.ajaxSetup({
+			headers: {
+				'Authorization': 'Acc  ' + access_token
+			}
+		});
+
+        let requestData = {
+            image_generation_period: null,
+        };
+		
+        return $.ajax({
+            method: 'PUT',
+            url: 'https://web.skyvr.videoexpertsgroup.com/' + 'api/v4/images/generation/live/',
+            data: JSON.stringify(requestData),
+            contentType: "application/json",
+            dataType: 'json',
+        }).then(function (data) {
+			$( "#result" ).html("Live image generation stopped");
+        });
+
+	});
+
+
+	$( "#getImages" ).click(function() {
+		
+		
+		// initializes HTTP header
+		access_token = $('#tokenContainer').val();		
+		$.ajaxSetup({
+			headers: {
+				'Authorization': 'Acc  ' + access_token
+			}
+		});
+
+		// change time to NOW
+		Load();
+
+
+        let start = new Date($('#from').val());
+        let end = new Date($('#to').val());
+        let requestData = {
+            limit: 100,
+            order_by: '-time',
+        };
+
+		// time conversion
+        let ts = new Date();
+        if (start != null) {
+            ts.setTime(start.getTime());
+            requestData.start = convertTimeToStr(ts);
+        }
+        if (end != null) {
+            ts.setTime(end.getTime());
+            requestData.end = convertTimeToStr(ts);
+        }
+
+		// executes HTTP GET request '/storage/images/'
+        return $.ajax({
+            method: 'GET',
+            url: 'https://web.skyvr.videoexpertsgroup.com/' + 'api/v4/storage/images/',
+            data: requestData,
+            dataType: 'json',
+
+        }).then(function (data) {
+            console.log(data.objects);
+            //alert("Images objects were loaded. Total images: " + data.objects.length + '. Check the browsers console for details.');
+			var count = 0;
+			var res = ''; $( "#result" ).html('')
+			$.each(data.objects, function(i, item){
+				if (item.url.indexOf("_livig_") >=0 )
+				{
+				res+='<div><a target="_blank" href='+item.url+'>'+count+' ' + item.time+'  ' + item.height +'x' + item.width + ' </a></div>';
+				count++;
+				}
+				})
+				res+='<div> Total images: '+count+'</div>';
+				if (count == 0) res+='<div> It can take upto 30 seconds to start a task</div>';
+			$( "#result" ).html( res );
+        }).fail(function () {
+
+        }).always(function () {
+
+        });
+	});
+
+
+////////////////////////////////////////////////////////////
+//
+//  This section is handling UI and data/time conversions.
+//
+////////////////////////////////////////////////////////////
+
+	Date.prototype.getFromFormat = function (format) {
+		let yyyy = this.getUTCFullYear().toString();
+		format = format.replace(/yyyy/g, yyyy)
+		let mm = (this.getUTCMonth() + 1).toString();
+		format = format.replace(/mm/g, (mm[1] ? mm : "0" + mm[0]));
+		let dd = this.getUTCDate().toString();
+		format = format.replace(/dd/g, (dd[1] ? dd : "0" + dd[0]));
+		let hh = this.getUTCHours().toString();
+		format = format.replace(/hh/g, (hh[1] ? hh : "0" + hh[0]));
+		let ii = this.getUTCMinutes().toString();
+		format = format.replace(/ii/g, (ii[1] ? ii : "0" + ii[0]));
+		let ss = this.getUTCSeconds().toString();
+		format = format.replace(/ss/g, (ss[1] ? ss : "0" + ss[0]));
+		return format;
+	};
+
+	function Load() {
+		let f1 = new Date();
+		let e1 = new Date(f1.getTime() - 1 * 60 * 1000); // - 1 hour
+
+		document.getElementById('from').value = e1.getFromFormat('mm/dd/yyyy hh:ii:ss');
+		document.getElementById('to').value = f1.getFromFormat('mm/dd/yyyy hh:ii:ss');
+	}
+
+	function convertTimeToStr(t) {
+		let d = new Date();
+		d.setTime(t);
+		let str = d.getFullYear() + "-"
+			+ ("00" + (d.getMonth() + 1)).slice(-2) + "-"
+			+ ("00" + d.getDate()).slice(-2) + "T"
+			+ ("00" + d.getHours()).slice(-2) + ":"
+			+ ("00" + d.getMinutes()).slice(-2) + ":"
+			+ ("00" + d.getSeconds()).slice(-2);
+		return str;
+	}
+
+	$('#showForm').on('click', function () {
+		$('.time-form').toggleClass('hidden')
+	})
+
+
+</script>
+</body>
+</html>

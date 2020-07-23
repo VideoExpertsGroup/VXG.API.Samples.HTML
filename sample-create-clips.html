@@ -1,0 +1,203 @@
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>VXG Create Clip</title>
+    <!-- frameworks -->
+    <script src="frw/jquery.min.js"></script>
+    <script src="frw/jquery-ui.min.js"></script>
+    <script src="frw/jquery.formatDateTime.js"></script>
+    <script src="frw/datetimepicker.full.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="frw/bootstrap.min.css">
+    <script src="frw/bootstrap.min.js"></script>
+
+	<style>
+		#tokenContainer {
+			width: 700px;
+		}
+		#showForm {
+			text-decoration: underline;
+		}
+		#showForm:hover {
+			cursor: pointer;
+		}
+		.btn {
+			color: white;
+			background-color: #a0cf4d;
+		}		
+	</style>
+</head>
+
+<body onLoad="Load()">
+<div class="container">
+
+    <h1>Create Clips Sample</h1>
+    <div class="form-inline" role="form">
+        <h3>Select a camera</h3>
+        <div class="form-group ">
+            <div class="input-group ">
+                <input id="tokenContainer" type="text" class="form-control" placeholder="Enter access token" value="">
+            </div>
+        </div>
+    </div>
+    <div>
+        <p><span id="showForm" style="display: hide;"> Create clip for the last 5 minutes</span>
+        </p>
+        <div class="time-form hidden">
+            <h3>Select time interval</h3>
+            <div class="form-inline" role="form">
+                <div class="form-group ">
+                    <div class="input-group ">
+                        <input id="from" type="text" class="form-control" aria-describedby="basic-addon1"
+                               placeholder="Start time">
+						<div class="input-group-append">
+							<span class="input-group-text">Start time in UTC</span>
+						</div>						   
+                    </div>
+                </div>
+                <div class="form-group ">
+                    <div class="input-group ">
+                        <input id="to" type="text" class="form-control" aria-describedby="basic-addon2"
+                               placeholder="End time">
+						<div class="input-group-append">
+							<span class="input-group-text">End time in UTC</span>
+						</div>						   
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="margin-top:10px">
+        <button id="startTask" class="btn btn-default">Create clip</button>
+		<button id="checkTask" class="btn btn-defaultx">Get clip</button>
+		<div id="result"></div>
+    </div>
+</div>
+
+<script>
+////////////////////////////////////////////////////////////
+//
+//  This section shows how to use VXG REST API.
+//
+////////////////////////////////////////////////////////////
+
+    var taskId;
+    var access_token;
+
+	$( "#startTask" ).click(function() {	
+		access_token = $('#tokenContainer').val();
+		// initializes HTTP header
+		$.ajaxSetup({
+			headers: {
+				'Authorization': 'Acc  ' + access_token
+			}
+		});
+	
+        let startTime = new Date($('#from').val()).getTime();
+        let endTime = new Date($('#to').val()).getTime();
+		
+        let requestData = {
+            title: "test clip",
+        };
+		
+		// time conversion
+        let ts = new Date();
+        if (startTime != null) {
+            ts.setTime(startTime);
+            requestData.start = convertTimeToStr(ts);
+        }
+        if (endTime != null) {
+            ts.setTime(endTime);
+            requestData.end = convertTimeToStr(ts);
+        }
+
+		// executes HTTP POST request '/images/generation/tasks/'
+        return $.ajax({
+            method: 'POST',
+            url: 'https://web.skyvr.videoexpertsgroup.com/' + 'api/v4/clips/',
+            data: JSON.stringify(requestData),
+            contentType: "application/json",
+            dataType: 'json',
+        }).then(function (data) {
+            taskId = data.id;
+			$( "#result" ).html('A new task created with a task ID: ' +  taskId);   
+        });
+	  
+	});
+
+	$( "#checkTask" ).click(function() {
+	    if(taskId){
+			// executes HTTP GET request '/images/generation/tasks/{TID}'
+            $.ajax({
+                method: 'GET',
+                url: 'https://web.skyvr.videoexpertsgroup.com/' + 'api/v4/clips/' + taskId + '/',
+                dataType: 'json'
+            }).then(function (data) {
+				console.log(data.objects);
+				$( "#result" ).html('Task status is '+  data.status);
+				
+				if (data.status == 'done')
+				{
+					let res = '<br><a target="_blank" href='+data.url+'> Download the clip </a>';
+					res += '<br><a target="_blank" href='+data.thumb.url+'> Download the thumbnail </a>';
+					$( "#result" ).html( res )
+				}
+            })
+        } else {
+			$( "#result" ).html('No task ID. Start a task first.');
+        }
+	});
+
+
+////////////////////////////////////////////////////////////
+//
+//  This section is handling UI and data/time conversions.
+//
+////////////////////////////////////////////////////////////
+
+	Date.prototype.getFromFormat = function (format) {
+		let yyyy = this.getUTCFullYear().toString();
+		format = format.replace(/yyyy/g, yyyy)
+		let mm = (this.getUTCMonth() + 1).toString();
+		format = format.replace(/mm/g, (mm[1] ? mm : "0" + mm[0]));
+		let dd = this.getUTCDate().toString();
+		format = format.replace(/dd/g, (dd[1] ? dd : "0" + dd[0]));
+		let hh = this.getUTCHours().toString();
+		format = format.replace(/hh/g, (hh[1] ? hh : "0" + hh[0]));
+		let ii = this.getUTCMinutes().toString();
+		format = format.replace(/ii/g, (ii[1] ? ii : "0" + ii[0]));
+		let ss = this.getUTCSeconds().toString();
+		format = format.replace(/ss/g, (ss[1] ? ss : "0" + ss[0]));
+		return format;
+	};
+
+	function Load() {
+		let f1 = new Date();
+		let e1 = new Date(f1.getTime() - 5 * 60 * 1000); // - 5 minutes
+
+		document.getElementById('from').value = e1.getFromFormat('mm/dd/yyyy hh:ii');
+		document.getElementById('to').value = f1.getFromFormat('mm/dd/yyyy hh:ii');
+	}
+
+	function convertTimeToStr(t) {
+		let d = new Date();
+		d.setTime(t);
+		let str = d.getFullYear() + "-"
+			+ ("00" + (d.getMonth() + 1)).slice(-2) + "-"
+			+ ("00" + d.getDate()).slice(-2) + "T"
+			+ ("00" + d.getHours()).slice(-2) + ":"
+			+ ("00" + d.getMinutes()).slice(-2) + ":"
+			+ ("00" + d.getSeconds()).slice(-2);
+		return str;
+	}
+
+	$('#showForm').on('click', function () {
+		$('.time-form').toggleClass('hidden')
+	})
+
+
+</script>
+</body>
+</html>
