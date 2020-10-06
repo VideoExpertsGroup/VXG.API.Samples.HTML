@@ -95,6 +95,31 @@
     var taskId;
     var access_token;
 
+    // 
+    function getBaseURLFromToken() {
+    	var _at = JSON.parse(atob(access_token));
+	var _default_host = 'web.skyvr.videoexpertsgroup.com';
+
+
+	var _url = _at['api'] ? _at['api'] : _default_host;
+	var _path = _at['path'] ?  '/' + _at['path'] + '/'  : '/';
+	var protocol = document.location.protocol;
+	if (protocol == 'file:')
+		protocol = 'https:';
+	var _api_port = (_at['api_p'] ? ':' + _at['api_p'] : "");
+	if (protocol == 'https:')
+		_api_port = (_at['api_sp'] ? ':' + _at['api_sp'] : "");		
+	var url = '';
+	if (_url === _default_host) {
+        	url =  protocol + "//" + _url + '/';
+	    }
+	else
+	    url =  protocol + "//" + _url  + _api_port + _path;
+
+	return url;
+        };
+	
+
 	$( "#startTask" ).click(function() {	
 		access_token = $('#tokenContainer').val();
 		// initializes HTTP header
@@ -124,7 +149,7 @@
         }
         return $.ajax({
             method: 'POST',
-            url: 'https://web.skyvr.videoexpertsgroup.com/' + 'api/v4/images/generation/tasks/',
+            url: getBaseURLFromToken() + 'api/v4/images/generation/tasks/',
             data: JSON.stringify(requestData),
             contentType: "application/json",
             dataType: 'json',
@@ -145,7 +170,7 @@
 			// executes HTTP GET request '/images/generation/tasks/{TID}'
             $.ajax({
                 method: 'GET',
-                url: 'https://web.skyvr.videoexpertsgroup.com/' + 'api/v4/images/generation/tasks/' + taskId + '/',
+                url: getBaseURLFromToken() + 'api/v4/images/generation/tasks/' + taskId + '/',
                 dataType: 'json'
             }).then(function (data) {
 				$( "#result" ).html('Task is '+  data.status)                
@@ -186,7 +211,7 @@
 			// executes HTTP GET request '/storage/images/'
 			return $.ajax({
 				method: 'GET',
-				url: 'https://web.skyvr.videoexpertsgroup.com/' + 'api/v4/storage/images/?origin=generated_from_records&origin_ids=' + taskId,
+				url: getBaseURLFromToken() + 'api/v4/storage/images/?origin=generated_from_records&origin_ids=' + taskId,
 				data: requestData,
 				dataType: 'json',
 
@@ -196,7 +221,7 @@
 				var res = ''; $( "#result" ).html('')
 				
 				$.each(data.objects, function(i, item){ 
-					if (item.url.indexOf("_recig_") >=0 )
+					//if (item.url.indexOf("_recig_") >=0 )
 					{
 					res+='<div><a target="_blank" href='+item.url+'>'+count+' ' + item.time+'  ' + item.height +'x' + item.width + ' </a></div>';
 					count++;
