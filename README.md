@@ -1,6 +1,6 @@
 # VXG.API.Samples
 
-Learn more about our <a href="www.videoexpertsgroup.com">Cloud Video Surveillance API</a>
+Learn more about our <a href="https://www.videoexpertsgroup.com">Cloud Video Surveillance API</a>
 
 Overview
 The API functions are divided in several sections. Interactive API reference (Swagger) can be found in the Docs & API section on the dashboard in corresponding API sections.
@@ -69,5 +69,5 @@ Example of an authorization header:
 
 'Authorization: Acc eyJhY2Nlc3MiOiAid2F0Y2giLCAidG9rZW4iOiAic2hhcmUuZXlKemFTSTZJRE14T0RoOS41YWEyMjA2N3QxMmNmZjc4MC5GVHpEeUZMYkVLQVNzM2ZJRFZaSDdFMEhhdGMiLCAiY2FtaWQiOiAxMzI0NDUsICJjbW5ncmlkIjogMTMyODUwLCAiYXBpIjogIndlYi5za3l2ci52aWRlb2V4cGVydHNncm91cC5jb20ifQ=='
 
-Learn more about <a href="www.videoexpertsgroup.com">Cloud Video Surveillance</a>
+Learn more about <a href="https://www.videoexpertsgroup.com">Cloud Video Surveillance</a>
 
