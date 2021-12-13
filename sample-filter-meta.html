@@ -1,0 +1,167 @@
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>VXG AI Meta loader</title>
+    <!-- frameworks -->
+    <script src="frw/jquery.min.js"></script>
+    <script src="frw/jquery-ui.min.js"></script>
+    <script src="frw/jquery.formatDateTime.js"></script>
+    <script src="frw/datetimepicker.full.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="frw/bootstrap.min.css">
+    <script src="frw/bootstrap.min.js"></script>
+
+    <style>
+        #tokenContainer {
+            width: 700px;
+        }
+
+        .btn {
+            color: white;
+            background-color: #a0cf4d;
+        }
+
+        table td {
+            text-align: center;
+            padding: 5px;
+        }
+
+        td.middle-color > div {
+            width: 40px;
+            height: 40px;
+        }
+
+        .subitem {
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .container > div {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>Filter Meta</h1>
+    <div class="form-inline" role="form">
+        <h3>Select a camera</h3>
+        <div class="form-group ">
+            <div class="input-group ">
+                <input id="tokenContainer" type="text" class="form-control" placeholder="Enter access token"
+                       value="token">
+            </div>
+        </div>
+    </div>
+
+    <h3>Create filter</h3>
+    <div id="filter-container">
+        <p class="subitem" style="min-width: 60px;">From</p>
+        <input type="datetime-local" name="from" step="2"
+           class="form-control form-control-lg subitem"><br/><br/>
+
+        <p class="subitem" style="min-width: 60px;">To</p>
+        <input type="datetime-local" name="to" step="2"
+           class="form-control form-control-lg subitem"><br/><br/>
+
+        <div>
+            <p class="subitem" style="min-width: 60px;">People</p>
+            <select name="pers-op" class="form-control subitem">
+                <option value="eq">=</option>
+                <option value="gt">></option>
+                <option value="lt"><</option>
+            </select>
+            <input type="number" name="people-count" placeholder="value" step="1"
+                   class="form-control form-control-lg subitem" required>
+        </div>
+        <div style="margin: 20px 0 20px 0">
+            <select name="main-op" class="form-control subitem">
+                <option value="and">and</option>
+                <option value="or">or</option>
+            </select>
+        </div>
+        <div>
+            <p class="subitem" style="min-width: 60px;">Car</p>
+            <select name="car-op" class="form-control subitem">
+                <option value="eq">=</option>
+                <option value="gt">></option>
+                <option value="lt"><</option>
+            </select>
+            <input type="number" name="car-count" placeholder="value" step="1"
+                   class="form-control form-control-lg subitem" required>
+        </div>
+    </div>
+    <div style="margin-top:10px; font-family: 'Ubuntu Mono',serif">
+        <button id="apply" class="btn btn-default" onclick="applyFilter()">Apply</button>
+        <div id="result"></div>
+    </div>
+    <br/>
+
+    <div id="result-container">
+        <table class="table table-striped" style="width: fit-content">
+            <thead>
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Person</th>
+                <th scope="col">Car</th>
+            </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+</div>
+<script>
+    const drawResult = (r) => {
+        let text = r['objects'].map(k => `<tr>
+            <td>${k['timestamp']}</td>
+            <td>${k['long']['Person'] || 0}</td>
+            <td>${k['long']['Vehicle'] || 0}</td>
+        </tr>`);
+        $('#tbody').html(text)
+    };
+
+    const applyFilter = () => {
+        let [main_op, pers_op, car_op, people_count, car_count] =
+            ['main-op', 'pers-op', 'car-op',
+                'people-count', 'car-count'].map((e) => {
+                return $('[name=' + e + ']');
+            });
+        [people_count, car_count] = [people_count, car_count].map(e => Number(e.val()));
+
+        let data = {
+            "limit": 1000,
+            "filter": {
+                'and': [{
+                    [main_op.val()]: [
+                        {
+                            "field": "long.Person",
+                            [pers_op.val()]: people_count,
+                        }, {
+                            "field": "long.Vehicle",
+                            [car_op.val()]: car_count,
+                        }
+                    ]
+                }, {
+                    "field": "timestamp",
+                    "gt": $('[name=from]').val()
+                }, {
+                    "field": "timestamp",
+                    "lt": $('[name=to]').val()
+                }]
+            },
+        };
+        return $.post({
+            url: 'https://web.skyvr.videoexpertsgroup.com/api/v4/meta/filter/',
+            dataType: 'json',
+            data: JSON.stringify(data),
+            headers: {
+                'Authorization': 'Acc ' + $('#tokenContainer').val(),
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+        }).then(drawResult)
+    };
+</script>
+</body>

@@ -1,0 +1,91 @@
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>VXG Create Clip</title>
+    <!-- frameworks -->
+    <script src="frw/jquery.min.js"></script>
+    <script src="frw/jquery-ui.min.js"></script>
+    <script src="frw/jquery.formatDateTime.js"></script>
+    <script src="frw/datetimepicker.full.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="frw/bootstrap.min.css">
+    <script src="frw/bootstrap.min.js"></script>
+
+	<style>
+		#tokenContainer, table {
+			width: 700px;
+		}
+		#showForm {
+			text-decoration: underline;
+		}
+		#showForm:hover {
+			cursor: pointer;
+		}
+		.btn {
+			color: white;
+			background-color: #a0cf4d;
+		}		
+		table{
+			border-collapse: inherit;
+			border:none;
+		}
+		table td{
+			padding:5px;
+			border:1px solid lightgray;
+		}
+		table img{
+			width: 220px;
+			height: 123px;
+			object-fit: cover;
+		}
+	</style>
+</head>
+
+<body onLoad="Load()">
+<div class="container">
+
+    <h1>Get channels by token</h1>
+    <div class="form-inline" role="form">
+        <h3>Select a group token</h3>
+        <div class="form-group ">
+            <div class="input-group ">
+                <input id="tokenContainer" type="text" class="form-control" placeholder="Enter group token" value="">
+            </div>
+        </div>
+    </div>
+    <div style="margin-top:10px">
+        <button id="startTask" class="btn btn-default">Get channels</button>
+		<div id="result"></div>
+    </div>
+    <div style="margin-top:10px" id="result">
+    </div>
+</div>
+
+<script>
+	function Load() {
+	        $('#startTask').click(function(){
+			let token = $('#tokenContainer').val();
+			$.ajax({
+				type: 'GET',
+				url: 'https://web.skyvr.videoexpertsgroup.com/api/v5/channels/?preview=true',
+				headers: {'Authorization' : 'SI ' + token},
+				contentType: "application/json"
+			}).then(function(r){
+			        let html = '<br/><table border="0" cellpadding="10px"><tr><td>Channdl ID</td><td>Name</td><td>Preview</td><td>Image generation</td></tr>';
+				for (let i=0;i<r.objects.length;i++){
+					html += '<tr><td>'+r.objects[i].id+'</td><td>'+r.objects[i].name+'</td><td>'+(r.objects[i].preview && r.objects[i].preview.url ? '<img src="'+r.objects[i].preview.url+'">':'')
+						+'</td><td><a target="_blank" href="sample-extract-images.html#'+r.objects[i].token+'">Click here</a></td></tr>';
+				}
+			        html + '</table>';
+			        let e = $('#result').html(html);
+			},function(r){
+			        $('#result').html('<br/>Fail to get channels. <br/><br/>'+(r.responseJSON.errorDetail?r.responseJSON.errorDetail:''));
+			});
+		});
+	}
+
+</script>
+</body>
+</html>

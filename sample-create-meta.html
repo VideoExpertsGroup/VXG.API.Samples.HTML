@@ -1,0 +1,156 @@
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>VXG AI Meta loader</title>
+    <!-- frameworks -->
+    <script src="frw/jquery.min.js"></script>
+    <script src="frw/jquery-ui.min.js"></script>
+    <script src="frw/jquery.formatDateTime.js"></script>
+    <script src="frw/datetimepicker.full.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="frw/bootstrap.min.css">
+    <script src="frw/bootstrap.min.js"></script>
+
+    <style>
+        #tokenContainer {
+            width: 700px;
+        }
+
+        .btn {
+            color: white;
+            background-color: #a0cf4d;
+        }
+
+        table td {
+            text-align: center;
+            padding: 5px;
+        }
+
+        td.middle-color > div {
+            width: 40px;
+            height: 40px;
+        }
+
+        .subitem {
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .container > div {
+            margin-top: 30px;
+        }
+
+        .rm-btn {
+            background-color: white;
+            border-color: white;
+            font-size: 10px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>Create Meta</h1>
+    <div class="form-inline" role="form">
+        <h3>Select a camera</h3>
+        <div class="form-group ">
+            <div class="input-group ">
+                <input id="tokenContainer" type="text" class="form-control" placeholder="Enter access token"
+                       value="token">
+            </div>
+        </div>
+    </div>
+
+    <h3>Fill meta</h3>
+    <div>
+        <h4>Timestamp</h4>
+        <input type="datetime-local" name="timestamp" step="2" required
+               class="form-control form-control-lg subitem">
+    </div>
+
+    <div>
+        <h4>Key - value</h4>
+        <div id="key-value-container"></div>
+        <input type="button" class="btn btn-default subitem" value="Add" onclick="addItem()">
+    </div>
+
+    <div>
+        <h4>Raw data</h4>
+        <textarea class="form-control" style="width: 50%" rows="3"></textarea>
+    </div>
+
+    <div style="margin-top:10px;">
+        <button id="send" class="btn btn-default" onclick="sendMeta()">Add meta</button>
+        <div id="result"></div>
+    </div><br/>
+
+    <div id="result-container"></div>
+</div>
+<script>
+    let currentId = 1;
+
+    const changeValueType = (select) => {
+        if (select.value === 'string') {
+            select.parentNode.querySelector('[name=value]').type = 'text';
+        } else if (select.value === 'long') {
+            select.parentNode.querySelector('[name=value]').type = 'number';
+            select.parentNode.querySelector('[name=value]').step = '1';
+        } else if (select.value === 'float') {
+            select.parentNode.querySelector('[name=value]').type = 'number';
+            select.parentNode.querySelector('[name=value]').step = '0.00001';
+        }
+    };
+
+    const addItem = () => {
+        $('#key-value-container').append(`
+        <div class="form-group item" id="item-${currentId}">
+            <select name="type" class="form-control subitem" onchange="changeValueType(this)">
+                <option value="long">Long</option>
+                <option value="float">Float</option>
+                <option value="string">String</option>
+            </select>
+            <input type="text" name="key" placeholder="Key" class="form-control form-control-lg subitem">
+            <input type="number" step="1" placeholder="value" name="value" class="form-control form-control-lg subitem">
+            <input type="button" value="❌" onclick="$('#item-${currentId}').remove()" class="rm-btn">
+        </div>
+        `);
+        currentId++;
+    };
+
+    const drawResult = (r) => {
+        let k = r['objects'][0], t;
+        if (k.status === 201) t = `<div>✓ ${k['id']}</div>`;
+        else t = `<div>❌ ${JSON.stringify(k)}</div>`;
+        $('#result-container').append(t)
+    }
+
+    const sendMeta = () => {
+        let data = {
+            timestamp: $('[name=timestamp]').val(),
+            long: {}, float: {}, string: {},
+        }
+        for (let elem of Array.from($('.item'))) {
+            let [type, key, value] = ['type', 'key', 'value'].map((r) => {
+                return elem.querySelector('[name=' + r + ']').value
+            });
+            if (type !== 'string') value = Number(value);
+            data[type][key] = value;
+        }
+        return $.post({
+            url: 'https://web.skyvr.videoexpertsgroup.com/api/v4/meta/',
+            dataType: 'json',
+            data: JSON.stringify([data]),
+            headers: {
+                'Authorization': 'Acc ' + $('#tokenContainer').val(),
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+        }).then(drawResult)
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {  // Add first item
+        addItem()
+    });
+</script>
+</body>

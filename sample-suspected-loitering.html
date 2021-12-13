@@ -1,0 +1,168 @@
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+    <title>VXG AI Image loader</title>
+    <!-- frameworks -->
+    <script src="frw/jquery.min.js"></script>
+    <script src="frw/jquery-ui.min.js"></script>
+    <script src="frw/jquery.formatDateTime.js"></script>
+    <script src="frw/datetimepicker.full.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="frw/bootstrap.min.css">
+    <script src="frw/bootstrap.min.js"></script>
+
+    <style>
+        #tokenContainer {
+            width: 700px;
+        }
+        #showForm {
+            text-decoration: underline;
+        }
+        #showForm:hover {
+            cursor: pointer;
+        }
+        .btn {
+            color: white;
+            background-color: #a0cf4d;
+        }        
+    </style>
+</head>
+
+<body onLoad="Load()">
+<div class="container">
+
+    <h1>Suspected loitering sample</h1>
+    <div class="form-inline" role="form">
+        <h3>Select a camera</h3>
+        <div class="form-group ">
+            <div class="input-group ">
+                <input id="tokenContainer" type="text" class="form-control" placeholder="Enter access token" value="eyJjYW1pZCI6IDIzNDc1NywgImNtbmdyaWQiOiAyMzUxODksICJhY2Nlc3MiOiAiYWxsIiwgInRva2VuIjogInNoYXJlLmV5SnphU0k2SURJd05EWXdNSDAuNjA2MzM4YzR0YmMxZmFiMDAuUW5TYnBVOHdaUkpUclBReWNDYlZTb2JjdDBRIiwgImFwaSI6ICJ3ZWIuc2t5dnIudmlkZW9leHBlcnRzZ3JvdXAuY29tIiwgImNhbSI6ICJjYW0uc2t5dnIudmlkZW9leHBlcnRzZ3JvdXAuY29tIn0=">
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:10px;">
+        <button id="startTask" class="btn btn-default">Start observe</button>
+    <div id="result"></div>
+    </div>
+</div>
+
+<script>
+////////////////////////////////////////////////////////////
+//
+//  This section shows how to use VXG REST API.
+//
+////////////////////////////////////////////////////////////
+
+    var taskId;
+    var access_token;
+    var pull_period = 5*1000;
+    var break_time = 60*000;
+    var person_min_level = 2;
+    var frame_size = 3;
+    var frame = [];
+    var last_frame_time;
+    var start_pull_time = new Date();
+    start_pull_time.setMinutes(start_pull_time.getMinutes()+start_pull_time.getTimezoneOffset());
+
+    function pushNewEvent(persons, event_time){
+        if (last_frame_time!==undefined && event_time.getTime()-last_frame_time.getTime()>break_time || persons<person_min_level)
+            frame = [];
+        last_frame_time = event_time;
+        if (persons<person_min_level) return;
+        frame.push(persons);
+        if (frame.length<frame_size) return;
+        let j=1;
+        for (; j<frame.length;j++)
+            if (frame[j]!=frame[0]) break;
+        if (j<frame.length){
+            frame.shift();
+            return;
+        }
+        $('#result').append('Detected at time '+event_time.toLocaleString()+' - '+frame[0]+' people(s)</br>');
+        frame = [];
+    }
+
+    function pullEvents(){
+        let requestData = {
+            limit: 10,
+            offset: 0,
+            events: 'object_and_scene_detection',
+            include_filemeta_download: true,
+            include_meta: true,
+            start: convertTimeToStr(start_pull_time)
+        };
+
+        return $.ajax({
+            method: 'GET',
+            url: 'https://web.skyvr.videoexpertsgroup.com/' + 'api/v2/storage/events/',
+            data: requestData
+        }).then(function (data) {
+            if (!data || !data.objects || !! !data.objects.length) {
+                setTimeout(pullEvents,pull_period);
+                return;
+            }
+            for (let i in data.objects){
+                if (!data.objects[i]['meta'] || data.objects[i]['meta']['Person']===undefined) continue;
+                pushNewEvent(parseInt(data.objects[i]['meta']['Person']),new Date(data.objects[i]['time']+'Z'));
+            }
+            setTimeout(pullEvents,pull_period);
+        },function(){
+            setTimeout(pullEvents,pull_period);
+        });
+    }
+
+    $( "#startTask" ).click(function() {    
+        $( "#startTask" ).attr('disabled','');
+        access_token = $('#tokenContainer').val();
+        // initializes HTTP header
+        $.ajaxSetup({
+            headers: {
+                'Authorization': 'Acc  ' + access_token
+            }
+        });
+        pullEvents();
+    });
+
+////////////////////////////////////////////////////////////
+//
+//  This section is handling UI and data/time conversions.
+//
+////////////////////////////////////////////////////////////
+
+    Date.prototype.getFromFormat = function (format) {
+        let yyyy = this.getUTCFullYear().toString();
+        format = format.replace(/yyyy/g, yyyy)
+        let mm = (this.getUTCMonth() + 1).toString();
+        format = format.replace(/mm/g, (mm[1] ? mm : "0" + mm[0]));
+        let dd = this.getUTCDate().toString();
+        format = format.replace(/dd/g, (dd[1] ? dd : "0" + dd[0]));
+        let hh = this.getUTCHours().toString();
+        format = format.replace(/hh/g, (hh[1] ? hh : "0" + hh[0]));
+        let ii = this.getUTCMinutes().toString();
+        format = format.replace(/ii/g, (ii[1] ? ii : "0" + ii[0]));
+        let ss = this.getUTCSeconds().toString();
+        format = format.replace(/ss/g, (ss[1] ? ss : "0" + ss[0]));
+        return format;
+    };
+
+    function Load() {
+    }
+
+    function convertTimeToStr(t) {
+        let d = new Date();
+        d.setTime(t);
+        let str = d.getFullYear() + "-"
+            + ("00" + (d.getMonth() + 1)).slice(-2) + "-"
+            + ("00" + d.getDate()).slice(-2) + "T"
+            + ("00" + d.getHours()).slice(-2) + ":"
+            + ("00" + d.getMinutes()).slice(-2) + ":"
+            + ("00" + d.getSeconds()).slice(-2);
+        return str;
+    }
+
+</script>
+</body>
+</html>
