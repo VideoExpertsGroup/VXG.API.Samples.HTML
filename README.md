@@ -1,11 +1,11 @@
-# VXG.API.Samples
+# VXG.API.Samples.HTML
 
 Learn more about our <a href="https://www.videoexpertsgroup.com">Cloud Video Surveillance API</a>
 
-Overview
+## Overview
 The API functions are divided in several sections. Interactive API reference (Swagger) can be found in the Docs & API section on the dashboard in corresponding API sections.
 
-Admin API
+## Admin API
 Add/edit/delete cameras.
 Manage storage and bandwidth limits.
 Retrieve usage statistics.
@@ -13,7 +13,7 @@ Store/retrieve meta information.
 The API documentaion and an online testing tool can be found here: Admin API
 The API authorization is described here
 
-Channel API
+## Channel API
 Get live video URLs.
 Get recorded video.
 Get stored images and clips.
@@ -23,7 +23,7 @@ Communication channel (Websocket) for cloud cameras.
 The API documentaion and an online testing tool can be found here: Channel API
 The API authorization is described here
 
-Artificial Intelligence (AI) API
+## Artificial Intelligence (AI) API
 Generate images from recorded video.
 Generate images from live video.
 Create clips.
@@ -32,7 +32,7 @@ Get recorded video.
 The API documentaion and an online testing tool can be found here: Channel API
 The API authorization is described here
 
-Camera Settings API
+## Camera Settings API
 Video settings: bitrate, framerate, resolution, etc.
 Audio settings.
 PTZ.
@@ -42,13 +42,13 @@ System settings.
 The API documentaion and an online testing tool can be found here: Channel API
 The API authorization is described here
 
-Events and Notification API
+## Events and Notification API
 Put/Get metadata and events.
 Send notifications.
 The API documentaion and an online testing tool can be found here: Channel API
 The API authorization is described here
 
-Admin API authorization
+## Admin API authorization
 To authorize your requests to Admin API you need to use your license key that you can find in the VXG dashboard: https://dashboard.videoexpertsgroup.com/?products=
 
 The API Key should be injected to Authorization header of every request to Admin API like this:
